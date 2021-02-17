@@ -4,7 +4,19 @@ from pathlib import Path
 from parse import parse
 
 
-def solve(data_structure):
+def solve_smart(data_structure):
+    solution = []
+
+    return solution
+
+
+def solve_stupid(data_structure):
+    solution = []
+
+    return solution
+
+
+def solve_greedy(data_structure):
     solution = []
 
     return solution
@@ -16,13 +28,25 @@ def write_solution(problem_name, solution_items):
             # elaborate item
             print(i, file=f)
 
+# ==================================================================
+
+
+SOLVER_LIBRARY = {
+    'greedy': solve_greedy,
+    'stupid': solve_stupid,
+    'smart': solve_smart
+}
+
 
 def main():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', type=str)
     group.add_argument('-a', action='store_true')
+    parser.add_argument('-s', type=str, choices=SOLVER_LIBRARY.keys(), required=True)
     args = parser.parse_args()
+
+    solve = SOLVER_LIBRARY[args.s]
 
     if args.a:
         inputs = Path('inputs')
