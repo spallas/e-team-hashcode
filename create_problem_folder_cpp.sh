@@ -11,4 +11,5 @@ else
   cp hash_code_lib_cpp/main.cpp "$name"_cpp/
   cp hash_code_lib_cpp/build.sh "$name"_cpp/
   cp hash_code_lib_cpp/clean.sh "$name"_cpp/
+  cp hash_code_lib_cpp/make_src.sh "$name"_cpp/
 fi
