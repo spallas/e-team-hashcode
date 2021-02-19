@@ -14,8 +14,8 @@ void processFile(const std::string& fileName) {
     // solve
 
 	// sort pizzas by num ingredients
-	std::sort(input.pizzas.begin(), input.pizzas.end(), [](std::vector<std::string> ingrA, std::vector<std::string> ingrB){
-		return ingrA.size() > ingrB.size();
+	std::sort(input.pizzas.begin(), input.pizzas.end(), [](Pizza pA, Pizza pB){
+		return pA.ingredients.size() > pB.ingredients.size();
 	});
 
 	std::vector<bool> usedPizzas = std::vector<bool>(input.pizzas.size(), false);
@@ -53,7 +53,7 @@ void processFile(const std::string& fileName) {
 
 					// compute pizza score by counting unique ingredients
 					std::set<std::string> possibleIngredients(teamIngredients);
-					for (auto ingr: input.pizzas[pizzaIdx]) {
+					for (auto ingr: input.pizzas[pizzaIdx].ingredients) {
 						possibleIngredients.insert(ingr);
 					}
 
@@ -81,9 +81,9 @@ void processFile(const std::string& fileName) {
 				}
 
 				usedPizzas[bestPizzaIdx] = true;
-				d.pizzas.push_back(bestPizzaIdx);
+				d.pizzas.push_back(input.pizzas[bestPizzaIdx].id);
 				pizzasLeft--;
-				for (auto ingr: input.pizzas[bestPizzaIdx])
+				for (auto ingr: input.pizzas[bestPizzaIdx].ingredients)
 					teamIngredients.insert(ingr);
 
 				// std::cout << "Added " << bestPizzaIdx << std::endl;

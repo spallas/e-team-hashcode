@@ -24,13 +24,19 @@ struct Delivery {
 	std::vector<int> pizzas;
 };
 
+
+struct Pizza {
+	int id;
+	std::vector<std::string> ingredients;
+};
+
 namespace FileManager {
 
 	struct InputFile {
         // define custom structure here
 		int numPizzas;
 		std::vector<int> teams;
-		std::vector<std::vector<std::string>> pizzas;
+		std::vector<Pizza> pizzas;
 	};
 
 	struct OutputFile {
@@ -65,10 +71,15 @@ namespace FileManager {
 		for (auto i = 1; i < lines.size(); i++) {
 			auto fields = split(lines[i]);
 			int num_ingr = to_int(fields[0]);
-			ret.pizzas.push_back(std::vector<std::string>(num_ingr));
+
+			Pizza p;
+			p.id = i-1;
+			p.ingredients = std::vector<std::string>(num_ingr);
+
 			for (auto j = 0; j < num_ingr; j++) {
-				ret.pizzas[i-1].push_back(fields[j+1]);
+				p.ingredients.push_back(fields[j+1]);
 			}
+			ret.pizzas.push_back(p);
 		}
 
 		file.close();
