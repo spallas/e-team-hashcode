@@ -1,5 +1,6 @@
 import argparse
 from collections import namedtuple
+from itertools import combinations
 from pathlib import Path
 
 from parse import parse
@@ -8,15 +9,67 @@ import numpy as np
 Delivery = namedtuple("Delivery", ['people', 'pizza_indices'])
 
 
-def solve_smart(data_structure):
-    solution = []
+def best_pizzas(pizza_list, look_ahead_steps, o):
+    look_ahead_steps = min(len(pizza_list), look_ahead_steps)
+    pizza_subset = []
+    for indices in combinations(range(look_ahead_steps), o):
+        overlap = set(pizza_list[indices[0]][1])
+        for i in indices[1:]:
+            overlap &= set(pizza_list[i][1])
+        pizza_subset.append((indices, len(overlap)))
+    bests = max(pizza_subset, key=lambda x: x[1])[0]
+    return bests
 
+
+def solve_smart(data_structure):
+    look_ahead_steps = 4
+    teams, pizzas = data_structure
+    pizzas = [(p_i, ingredients) for p_i, ingredients in pizzas.items()]
+    pizza_list = sorted(pizzas, key=lambda x: len(x[1]), reverse=True)
+    order_teams = [4, 3, 2]
+    deliveries = []
+
+    for o in order_teams:
+        num_teams = teams[o]
+        for i in range(num_teams):
+            if len(pizza_list) < o:
+                break
+            pizzas = []
+            bests = best_pizzas(pizza_list, look_ahead_steps, o)
+            for j in sorted(bests, reverse=True):
+                pizzas.append(pizza_list[j][0])
+                del pizza_list[j]
+            delivery = Delivery(people=o, pizza_indices=pizzas)
+            deliveries.append(delivery)
+
+    solution = [len(deliveries)]
+    for d in deliveries:
+        s = str(d.people) + ' ' + ' '.join(map(str, d.pizza_indices))
+        solution.append(s)
     return solution
 
 
 def solve_stupid(data_structure):
-    solution = []
+    teams, pizzas = data_structure
+    pizza_list = [(p_i, len(ingredients)) for p_i, ingredients in pizzas.items()]
+    pizza_list = sorted(pizza_list, key=lambda x: x[1], reverse=True)
+    order_teams = [2, 3, 4]
+    deliveries = []
 
+    for o in order_teams:
+        num_teams = teams[o]
+        for i in range(num_teams):
+            pizzas_left = len(pizza_list)
+            if pizzas_left < o:
+                break
+            pizzas = [pizza_list.pop(0)[0] for _ in range(o)]
+            delivery = Delivery(people=o, pizza_indices=pizzas)
+            deliveries.append(delivery)
+
+    solution = [len(deliveries)]
+    for d in deliveries:
+        s = str(d.people) + ' ' + ' '.join(map(str, d.pizza_indices))
+        solution.append(s)
     return solution
 
 
@@ -100,7 +153,7 @@ def main():
 
     if args.a:
         inputs = Path('inputs')
-        for input_file in inputs.iterdir():
+        for input_file in sorted(inputs.iterdir(), key=lambda x: x.name):
             print(input_file.name)
             if input_file.is_file():
                 data_structure = parse(input_file)
