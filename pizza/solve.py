@@ -1,5 +1,5 @@
 import argparse
-from collections import namedtuple
+from collections import namedtuple, Counter
 from itertools import combinations
 from pathlib import Path
 
@@ -9,22 +9,95 @@ import numpy as np
 Delivery = namedtuple("Delivery", ['people', 'pizza_indices'])
 
 
+def attempt_feasible(attempt, teams):
+    counts = Counter([len(x) for x in attempt[0]])
+    for i, count in counts.items():
+        if count > teams[i]:
+            return False
+    return True
+
+
+def best_subset(pizza_subset, look_ahead_steps, team_orders_left, teams):
+    attempts = []
+    for l in range(len(team_orders_left)):
+        order = team_orders_left[l:]
+        not_taken = [1 for _ in range(look_ahead_steps)]
+        attempt = []
+        score = 0
+        for o in order:
+            i = 0
+            o_subset = pizza_subset[o]
+            while sum(not_taken) >= o:
+                if all([ not_taken[h] for h in o_subset[i][0] ]):
+                    attempt.append(o_subset[i][0])
+                    for j in o_subset[i][0]:
+                        not_taken[j] = 0
+                    score += o_subset[i][1] ** 2
+                i += 1
+        attempts.append((attempt, score))
+
+    best = max(
+        filter(
+            lambda a: attempt_feasible(a, teams),
+            attempts
+        ),
+        key=lambda x: x[1],
+        default=[[]]
+    )[0]
+    return best
+
+
+def solve_smarter(data_structure):
+    teams, pizzas_ = data_structure
+    look_ahead_steps = 30
+    pizzas = [(p_i, set(ingredients)) for p_i, ingredients in pizzas_.items()]
+    pizza_list = sorted(pizzas, key=lambda x: len(x[1]), reverse=True)
+    deliveries = []
+
+    while sum(teams.values()) > 0 and len(pizza_list) > min([(k, h) for k, h in teams.items() if h != 0],  key=lambda x: x[1])[0]:
+        pizza_subset = {}
+        order_teams = sorted([k for k, h in teams.items() if h != 0], reverse=True)
+        for o in order_teams:
+            o_subset = []
+            look_ahead_steps = min(len(pizza_list), look_ahead_steps)
+            for indices in combinations(range(look_ahead_steps), o):
+                union = set.union(*[pizza_list[i][1] for i in indices])
+                o_subset.append((set(indices), len(union)))
+            pizza_subset[o] = sorted(o_subset, reverse=True)
+        bests_list = best_subset(pizza_subset, look_ahead_steps, order_teams, teams)
+        if len(bests_list) == 0:
+            break
+        bests_sorted = sorted(set.union(*bests_list), reverse=True)
+        for bests in bests_list:
+            teams[len(bests)] -= 1
+            pizzas = [pizza_list[j][0] for j in bests]
+            delivery = Delivery(people=len(bests), pizza_indices=pizzas)
+            deliveries.append(delivery)
+
+        for j in bests_sorted:
+            del pizza_list[j]
+
+    solution = [len(deliveries)]
+    for d in deliveries:
+        s = str(d.people) + ' ' + ' '.join(map(str, d.pizza_indices))
+        solution.append(s)
+    return solution
+
+
 def best_pizzas(pizza_list, look_ahead_steps, o):
     look_ahead_steps = min(len(pizza_list), look_ahead_steps)
     pizza_subset = []
     for indices in combinations(range(look_ahead_steps), o):
-        overlap = set(pizza_list[indices[0]][1])
-        for i in indices[1:]:
-            overlap &= set(pizza_list[i][1])
+        overlap = set.intersection(*[pizza_list[i][1] for i in indices])
         pizza_subset.append((indices, len(overlap)))
-    bests = max(pizza_subset, key=lambda x: x[1])[0]
+    bests = min(pizza_subset, key=lambda x: x[1])[0]
     return bests
 
 
 def solve_smart(data_structure):
-    look_ahead_steps = 4
+    look_ahead_steps = 30
     teams, pizzas = data_structure
-    pizzas = [(p_i, ingredients) for p_i, ingredients in pizzas.items()]
+    pizzas = [(p_i, set(ingredients)) for p_i, ingredients in pizzas.items()]
     pizza_list = sorted(pizzas, key=lambda x: len(x[1]), reverse=True)
     order_teams = [4, 3, 2]
     deliveries = []
@@ -137,7 +210,8 @@ def write_solution(problem_name, solution_items):
 SOLVER_LIBRARY = {
     'greedy': solve_greedy,
     'stupid': solve_stupid,
-    'smart': solve_smart
+    'smart': solve_smart,
+    'smarter': solve_smarter
 }
 
 
