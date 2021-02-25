@@ -8,6 +8,7 @@
 #include <iterator>
 
 #include <map>
+#include <algorithm>
 
 std::vector<std::string> split(const std::string text) {
 	std::istringstream iss(text);
@@ -27,6 +28,11 @@ std::string join(const std::vector<std::string> array) {
 int to_int(const std::string& text) {
 	return std::atoi(text.c_str());
 }
+
+struct StreetData {
+	int used;
+	int time;
+};
 
 struct Street {
 	int intersectionStart;
@@ -65,7 +71,7 @@ namespace FileManager {
 		std::vector<Street> streets;
 		std::vector<Car> cars;
 
-		std::map<std::string, int> streetsUsed;
+		std::map<std::string, StreetData> streetsUsed;
 		std::map<int, std::vector<std::string>> intersectionsStreet;
 
 		std::string toString() {
@@ -95,8 +101,8 @@ namespace FileManager {
 			}
 
 			ss << "streetsUsed: " << std::endl;
-			for (auto it = this->streetsUsed.begin(); it != this->streetsUsed.end(); it++) {
-				ss << "\t" << it->first << ", " << it->second << std::endl;
+			for (auto sU : this->streetsUsed) {
+				ss << "\t" << sU.first << ": (" << sU.second.used << ", " << sU.second.time << ")" << std::endl;
 			}
 
 			ss << "intersectionStreets: " << std::endl;
@@ -149,7 +155,10 @@ namespace FileManager {
 
 			ret.streets.push_back(s);
 
-			ret.streetsUsed[s.streetName] = 0;
+			StreetData sd;
+			sd.time = s.time;
+			sd.used = 0;
+			ret.streetsUsed[s.streetName] = sd;
 
 			if (ret.intersectionsStreet.count(s.intersectionEnd) == 0)
 				ret.intersectionsStreet[s.intersectionEnd] = std::vector<std::string>();
@@ -165,7 +174,7 @@ namespace FileManager {
 				auto streetName = fields[j+1];
 				c.path.push_back(streetName);
 
-				ret.streetsUsed[streetName]++;
+				ret.streetsUsed[streetName].used++;
 			}
 			ret.cars.push_back(c);
 		}
@@ -189,6 +198,12 @@ namespace FileManager {
 		for (auto sched : out.schedules) {
 			outFile << sched.intersectionId << std::endl;
 			outFile << sched.streetsControlled << std::endl;
+
+			// sort by green diuration
+			std::sort(sched.schedules.begin(), sched.schedules.end(), [](StreetSchedule a, StreetSchedule b){
+				return a.greenDuration > b.greenDuration;
+			});
+
 			for (auto streetSched: sched.schedules) {
 				outFile << streetSched.streetName << " " << streetSched.greenDuration << std::endl;
 			}
