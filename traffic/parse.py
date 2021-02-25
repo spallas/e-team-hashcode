@@ -67,4 +67,4 @@ def parse(file_path):
                     path_map.setdefault(name, []).append(cars)
                 car_map[cars] = Car(cars, path_)
 
-        return street_map, inters_map, car_map, path_map
+        return street_map, inters_map, car_map, path_map, duration
