@@ -20,7 +20,7 @@ def solve_smart(data_structure):
 
 
 def solve_stupid(data_structure):
-    street_map, inters_map, car_map, path_map = data_structure
+    street_map, inters_map, car_map, path_map, duration = data_structure
     solution: List[Schedule] = []
 
     for inters_id, inters in inters_map.items():
@@ -35,7 +35,7 @@ def solve_stupid(data_structure):
 
 
 def solve_greedy(data_structure):
-    street_map, inters_map, car_map, path_map = data_structure
+    street_map, inters_map, car_map, path_map, duration = data_structure
     solution: List[Schedule] = []
 
     for inters_id, inters in inters_map.items():
@@ -43,13 +43,13 @@ def solve_greedy(data_structure):
         densities = []
         for s in inters.in_streets:
             if s.name in path_map:
-                densities.append(len(path_map[s.name]))
+                densities.append(len(path_map[s.name]) / s.duration)
             else:
                 densities.append(1)
         d_sum = sum(densities)
-        densities = [round(100000 * d/d_sum) for d in densities]
+        densities = [1 + round(5 * d/d_sum) if d != 0 else 0 for d in densities]
         d_gcd = gcd(*densities)
-        light_duration = [d//d_gcd for d in densities]
+        light_duration = [max(d//d_gcd, duration) if d != 0 else 0 for d in densities]
         for i, s in enumerate(inters.in_streets):
             lights[s] = light_duration[i]
 
