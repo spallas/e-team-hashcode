@@ -40,21 +40,23 @@ def parse(file_path):
         street_map: Dict[str, Street] = {}
         inters_map: Dict[int, Intersection] = {}
         car_map: Dict[int, Car] = {}
+        path_map: Dict[str, List[int]] = {}  # street_id, car_id
 
         for line in f:
             if streets > 0:
                 streets -= 1
                 a, b, name, duration = line.strip().split(' ')
+                a, b, duration = int(a), int(b), int(duration)
                 s = Street(name, a, b, duration)
                 street_map[name] = s
-                if a in inters_map:
-                    inters_map[a].in_streets.append(s)
-                else:
-                    inters_map[a] = Intersection(a, in_streets=[s], out_streets=[])
                 if b in inters_map:
-                    inters_map[b].out_streets.append(s)
+                    inters_map[b].in_streets.append(s)
                 else:
-                    inters_map[b] = Intersection(b, in_streets=[], out_streets=[s])
+                    inters_map[b] = Intersection(b, in_streets=[s], out_streets=[])
+                if a in inters_map:
+                    inters_map[a].out_streets.append(s)
+                else:
+                    inters_map[a] = Intersection(a, in_streets=[], out_streets=[s])
             else:
                 cars -= 1
                 path_len, path = line.strip().split(' ', maxsplit=1)
@@ -62,6 +64,7 @@ def parse(file_path):
                 path_ = []
                 for name in path:
                     path_.append(street_map[name])
+                    path_map.setdefault(name, []).append(cars)
                 car_map[cars] = Car(cars, path_)
 
-        return street_map, inters_map, car_map
+        return street_map, inters_map, car_map, path_map

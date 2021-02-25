@@ -2,6 +2,7 @@ import argparse
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
+from math import gcd
 
 from parse import parse, Intersection, Street
 
@@ -19,13 +20,13 @@ def solve_smart(data_structure):
 
 
 def solve_stupid(data_structure):
-    street_map, inters_map, car_map = data_structure
+    street_map, inters_map, car_map, path_map = data_structure
     solution: List[Schedule] = []
 
     for inters_id, inters in inters_map.items():
         lights = {}
         for s in inters.in_streets:
-            lights[s] = 2  # 2 seconds
+            lights[s] = 1  # seconds
 
         sched = Schedule(inters, lights)
         solution.append(sched)
@@ -34,7 +35,26 @@ def solve_stupid(data_structure):
 
 
 def solve_greedy(data_structure):
-    solution = []
+    street_map, inters_map, car_map, path_map = data_structure
+    solution: List[Schedule] = []
+
+    for inters_id, inters in inters_map.items():
+        lights = {}
+        densities = []
+        for s in inters.in_streets:
+            if s.name in path_map:
+                densities.append(len(path_map[s.name]))
+            else:
+                densities.append(1)
+        d_sum = sum(densities)
+        densities = [round(100000 * d/d_sum) for d in densities]
+        d_gcd = gcd(*densities)
+        light_duration = [d//d_gcd for d in densities]
+        for i, s in enumerate(inters.in_streets):
+            lights[s] = light_duration[i]
+
+        sched = Schedule(inters, lights)
+        solution.append(sched)
 
     return solution
 
