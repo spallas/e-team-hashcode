@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 from math import gcd
+import numpy as np
 
 from parse import parse, Intersection, Street
 
@@ -14,7 +15,61 @@ class Schedule:
 
 
 def solve_smart(data_structure):
-    solution = []
+    street_map, inters_map, car_map, path_map, duration = data_structure
+    solution: List[Schedule] = []
+
+    for inters_id, inters in inters_map.items():
+        lights = {}
+        # list of paths with inters_id
+        counts_variance = {}
+        for s in inters.in_streets:
+            if s.name not in path_map:
+                continue
+            counts = {}  # step index, max cars together
+            cars = path_map[s.name]
+            for car_id in cars:
+                path = car_map[car_id].path
+                i = path.index(s)
+                steps = 0
+                for k in range(0, i):
+                    steps += path[k].duration
+                if steps in counts:
+                    counts[steps] += 1
+                else:
+                    counts[steps] = 1
+            var = np.var(np.array(list(counts.values()), dtype=np.int64))
+            counts_variance[s] = var
+
+        densities = []
+        for s in inters.in_streets:
+            alpha = 0.9
+            if s.name in path_map:
+                d = alpha * len(path_map[s.name]) + (1-alpha) * counts_variance[s]
+                # d /= len(path_map[s.name]) * counts_variance[s]
+                densities.append(d)
+            else:
+                densities.append(0)
+        d_sum = sum(densities)
+        if d_sum == 0:
+            continue
+        densities = [round(10000 * d/d_sum) if d != 0 else 0 for d in densities]
+        d_gcd = gcd(*densities)
+        light_duration = [max(d//d_gcd, duration) if d != 0 else 1 for d in densities]
+        for i, s in enumerate(inters.in_streets):
+            lights[s] = light_duration[i]
+
+        for s in inters.in_streets:
+            lights[s] = 1  # seconds
+
+        sched = Schedule(inters, lights)
+        solution.append(sched)
+
+    return solution
+
+
+def solve_smarter(data_structure):
+    street_map, inters_map, car_map, path_map, duration = data_structure
+    solution: List[Schedule] = []
 
     return solution
 
