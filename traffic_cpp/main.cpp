@@ -9,10 +9,9 @@ void processFile(const std::string& fileName) {
 	auto input = FileManager::readInput("./inputs/" + fileName + ".in");
     FileManager::OutputFile out;
 
-	std::map<std::string, float> timePerFile = { {"a", 2}, {"b", 50}, {"c", 50}, {"d", 50}, {"e", 50}, {"f", 50} };
+	std::map<std::string, float> timePerFile = { {"a", 2}, {"b", 2}, {"c", 7}, {"d", 7}, {"e", 3}, {"f", 7} };
 
     // solve
-	const int FACTOR = 1;
 
 	for (auto inters : input.intersectionsStreet) {
 		auto iId = inters.first;
@@ -32,11 +31,13 @@ void processFile(const std::string& fileName) {
 			// > 1 streets
 			auto lightDuration = std::vector<long>(streets.size());
 			long maxLighDuration = -1;
+			long sumLightDuration = 0;
 			for (auto i = 0; i < streets.size(); i++) {
-				lightDuration[i] = input.streetsUsed[streets[i]] * FACTOR;
+				lightDuration[i] = input.streetsUsed[streets[i]];
 				if (lightDuration[i] > maxLighDuration) {
 					maxLighDuration = lightDuration[i];
 				}
+				sumLightDuration += lightDuration[i];
 			}
 
 			if (maxLighDuration == 0) {
@@ -46,7 +47,7 @@ void processFile(const std::string& fileName) {
 			double maxTime = (double)timePerFile[fileName];
 
 			for (auto i = 0; i < streets.size(); i++) {
-				double val = std::ceil(((double)(lightDuration[i]) / (double)(maxLighDuration) * maxTime));
+				double val = std::ceil(((double)(lightDuration[i]) / (double)(sumLightDuration) * maxTime));
 				if (val < 1.0e-3 ) {
 					val = 1;
 				}
